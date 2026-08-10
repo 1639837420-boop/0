@@ -1,0 +1,149 @@
+-- 载入彩虹UI库
+local RainbowLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/YJY2022hh666/yjy/main/rainbow.ui.main.lua?token=GHSAT0AAAAAACESL5MYP6BL6PJ45CVEZRQEZFYXXUA", true))()
+local window = RainbowLib:new("2脚本")  -- 修改脚本名称
+
+-- ======== 信息页 ========
+local infoTab = window:Tab("信息", '6035145364')
+local infoSection = infoTab:section("基本信息", true)
+infoSection:Label("你的用户名：" .. game.Players.LocalPlayer.Character.Humanoid.Name)
+infoSection:Label("你的注入器：" .. identifyexecutor())
+
+local uiSection = infoTab:section("UI设置", true)
+uiSection:Button("摧毁UI", function()
+    game:GetService("CoreGui")["frosty"]:Destroy()
+end)
+
+uiSection:Toggle("彩虹UI风格", "", false, function(state)
+    if state then
+        game:GetService("CoreGui")["frosty"].Main.Style = "DropShadow"
+    else
+        game:GetService("CoreGui")["frosty"].Main.Style = "Custom"
+    end
+end)
+
+-- ======== 功能页（主菜单） ========
+local mainTab = window:Tab("主要功能", '6035145364')
+local mainSection = mainTab:section("玩家控制", true)
+
+-- 飞行功能（按住空格上升，左Shift下降）
+local flying = false
+local flySpeed = 50
+mainSection:Toggle("飞行模式", "", false, function(state)
+    flying = state
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        local hum = char.Humanoid
+        if state then
+            hum.PlatformStand = true
+            -- 设置飞行控制
+            game:GetService("RunService").Heartbeat:Connect(function()
+                if flying and char and char:FindFirstChild("HumanoidRootPart") then
+                    local root = char.HumanoidRootPart
+                    local moveDir = Vector3.new(0, 0, 0)
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+                        moveDir = moveDir + Vector3.new(0, 1, 0)
+                    end
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftShift) then
+                        moveDir = moveDir + Vector3.new(0, -1, 0)
+                    end
+                    local forward = root.CFrame.LookVector
+                    local right = root.CFrame.RightVector
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+                        moveDir = moveDir + forward
+                    end
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+                        moveDir = moveDir - forward
+                    end
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+                        moveDir = moveDir - right
+                    end
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+                        moveDir = moveDir + right
+                    end
+                    if moveDir.Magnitude > 0 then
+                        root.Velocity = moveDir.Unit * flySpeed
+                    else
+                        root.Velocity = Vector3.new(0, 0, 0)
+                    end
+                end
+            end)
+        else
+            hum.PlatformStand = false
+            if char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
+    end
+end)
+
+-- 无限跳跃
+mainSection:Toggle("无限跳跃", "", false, function(state)
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        local hum = char.Humanoid
+        if state then
+            hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+            hum.JumpPower = 50
+            -- 每次跳跃时重置跳跃次数
+            local jumpConn
+            jumpConn = hum.StateChanged:Connect(function(old, new)
+                if new == Enum.HumanoidStateType.Jumping and state then
+                    hum.Jump = true
+                end
+            end)
+            -- 存储连接以便关闭
+            if not char:FindFirstChild("JumpConn") then
+                local conn = Instance.new("BoolValue")
+                conn.Name = "JumpConn"
+                conn.Value = true
+                conn.Parent = char
+                conn:SetAttribute("Connection", jumpConn)
+            end
+        else
+            hum.JumpPower = 50 -- 恢复默认（可根据游戏调整）
+            if char:FindFirstChild("JumpConn") then
+                local conn = char.JumpConn:GetAttribute("Connection")
+                if conn then conn:Disconnect() end
+                char.JumpConn:Destroy()
+            end
+        end
+    end
+end)
+
+-- 速度调节滑块
+mainSection:Slider("移动速度", 16, 100, 16, function(value)
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = value
+    end
+end)
+
+-- ======== 额外功能页 ========
+local extraTab = window:Tab("其他", '6035145364')
+local extraSection = extraTab:section("实用工具", true)
+
+extraSection:Button("传送至鼠标位置", function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    local mouse = player:GetMouse()
+    if char and char:FindFirstChild("HumanoidRootPart") and mouse then
+        local target = mouse.Hit.p
+        char.HumanoidRootPart.CFrame = CFrame.new(target)
+    end
+end)
+
+extraSection:Button("重置角色", function()
+    game.Players.LocalPlayer.Character:BreakJoints()
+end)
+
+-- ======== 玩家加入提示（你原有的功能） ========
+local joinTab = window:Tab("玩家提示", '6035145364')
+local joinSection = joinTab:section("加入提醒", true)
+joinSection:Toggle("玩家加入游戏提示", "", false, function(state)
+    if state then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/boyscp/scriscriptsc/main/bbn.lua"))()
+    end
+end)
